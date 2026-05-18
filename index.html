@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - Bus Tracking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        /* 1. Parallax Background Image Container */
+        #background-container {
+            position: fixed;
+            top: -5%; left: -5%;
+            width: 110%; height: 110%;
+            z-index: -2;
+            background-image: url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1887&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 2. Animated Gradient Overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #334155, #0f172a);
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+            opacity: 0.8;
+            z-index: -1;
+        }
+
+        /* 3. "Connecting Chains" Particles Container */
+        #tsparticles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Sits above the background and gradient */
+        }
+        
+        /* 4. Main Content Container */
+        #main-content {
+            position: relative; /* Needed to apply z-index */
+            z-index: 1; /* Ensures content is above particles */
+        }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .modal-backdrop { transition: opacity 0.3s ease; }
+        .modal-panel { transition: all 0.3s ease; }
+
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes shake {
+          10%, 90% { transform: scale(1) translate3d(-1px, 0, 0); }
+          20%, 80% { transform: scale(1) translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: scale(1) translate3d(-4px, 0, 0); }
+          40%, 60% { transform: scale(1) translate3d(4px, 0, 0); }
+        }
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen text-white">
+
+    <div id="background-container"></div>
+
+    <div id="tsparticles"></div>
+
+    <div id="main-content" class="text-center">
+        <h1 class="text-5xl font-bold mb-3 fade-in-up" style="animation-delay: 0.2s;">Bus Tracking System</h1>
+        <p class="text-gray-300 text-lg mb-12 fade-in-up" style="animation-delay: 0.4s;">Please select your role to continue</p>
+        <div class="flex flex-col md:flex-row gap-8">
+            <a href="/user" class="glass-card p-10 rounded-2xl shadow-lg w-72 flex flex-col items-center group fade-in-up" style="animation-delay: 0.6s;">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mb-4 text-gray-200 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <h2 class="text-2xl font-semibold">I am a User</h2>
+                <p class="text-gray-300 mt-2">View bus routes and times.</p>
+            </a>
+            <div id="bus-login-button" class="glass-card p-10 rounded-2xl shadow-lg w-72 cursor-pointer flex flex-col items-center group fade-in-up" style="animation-delay: 0.8s;">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mb-4 text-gray-200 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM8.5 16.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm7 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM12 8c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 14v-2c0-2.66 5.33-4 8-4 .71 0 1.39.08 2.03.24" />
+                </svg>
+                <h2 class="text-2xl font-semibold">I am an Admin</h2>
+                <p class="text-gray-300 mt-2">Manage buses and schedules.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden modal-backdrop" style="z-index: 10;">
+        <div class="glass-card rounded-2xl shadow-2xl p-8 w-full max-w-md modal-panel transform scale-95">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Admin Login</h2>
+                <button id="close-modal-button" class="text-gray-300 hover:text-white text-4xl leading-none">&times;</button>
+            </div>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-gray-200 text-sm font-bold mb-2">Username</label>
+                    <input type="text" id="username" name="username" class="shadow-inner appearance-none border border-white/20 bg-white/10 rounded-lg w-full py-3 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-sky-400" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-gray-200 text-sm font-bold mb-2">Password</label>
+                    <input type="password" id="password" name="password" class="shadow-inner appearance-none border border-white/20 bg-white/10 rounded-lg w-full py-3 px-4 text-white mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-sky-400" required>
+                </div>
+                <p id="error-message" class="text-red-400 text-xs italic mb-4 h-4"></p>
+                <div class="flex items-center justify-end">
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition-all duration-300 transform hover:scale-105">
+                        Log In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 3D Parallax Background Effect ---
+            const bg = document.getElementById('background-container');
+            if (bg) {
+                document.addEventListener('mousemove', (e) => {
+                    const { innerWidth, innerHeight } = window;
+                    const { clientX, clientY } = e;
+                    const moveX = (clientX / innerWidth - 0.5) * 40;
+                    const moveY = (clientY / innerHeight - 0.5) * 40;
+                    bg.style.transform = `translateX(${moveX}px) translateY(${moveY}px)`;
+                });
+            }
+
+            // --- "Connecting Chains" tsParticles Config ---
+            tsParticles.load("tsparticles", {
+                fpsLimit: 60,
+                interactivity: {
+                    events: {
+                        onHover: {
+                            enable: true,
+                            mode: "grab",
+                        },
+                        resize: true,
+                    },
+                    modes: {
+                        grab: {
+                            distance: 140,
+                            links: {
+                                opacity: 1,
+                            },
+                        },
+                    },
+                },
+                particles: {
+                    color: {
+                        value: "#ffffff",
+                    },
+                    links: {
+                        color: "#ffffff",
+                        distance: 150,
+                        enable: true,
+                        opacity: 0.2,
+                        width: 1,
+                    },
+                    collisions: {
+                        enable: true,
+                    },
+                    move: {
+                        direction: "none",
+                        enable: true,
+                        outModes: {
+                            default: "bounce",
+                        },
+                        random: false,
+                        speed: 1,
+                        straight: false,
+                    },
+                    number: {
+                        density: {
+                            enable: true,
+                            area: 800,
+                        },
+                        value: 80,
+                    },
+                    opacity: {
+                        value: 0.3,
+                    },
+                    shape: {
+                        type: "circle",
+                    },
+                    size: {
+                        value: { min: 1, max: 3 },
+                    },
+                },
+                detectRetina: true,
+            });
+
+            // --- Modal Logic ---
+            const loginModal = document.getElementById('login-modal');
+            const busLoginButton = document.getElementById('bus-login-button');
+            const closeModalButton = document.getElementById('close-modal-button');
+            const loginForm = document.getElementById('login-form');
+            const errorMessage = document.getElementById('error-message');
+
+            const showModal = () => {
+                loginModal.classList.remove('hidden');
+                setTimeout(() => {
+                    loginModal.classList.add('opacity-100');
+                    loginModal.querySelector('.modal-panel').classList.remove('scale-95');
+                    loginModal.querySelector('.modal-panel').classList.add('scale-100');
+                }, 10);
+            };
+
+            const hideModal = () => {
+                loginModal.querySelector('.modal-panel').classList.add('scale-95');
+                loginModal.classList.remove('opacity-100');
+                setTimeout(() => {
+                    loginModal.classList.add('hidden');
+                    errorMessage.textContent = '';
+                    loginForm.reset();
+                }, 300);
+            };
+
+            busLoginButton.addEventListener('click', showModal);
+            closeModalButton.addEventListener('click', hideModal);
+            loginModal.addEventListener('click', (event) => {
+                if (event.target === loginModal) hideModal();
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !loginModal.classList.contains('hidden')) hideModal();
+            });
+
+            loginForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const { username, password } = event.target.elements;
+                const correctUsername = 'admin';
+                const correctPassword = 'password123';
+
+                if (username.value === correctUsername && password.value === correctPassword) {
+                    errorMessage.textContent = '';
+                    const button = event.target.querySelector('button[type="submit"]');
+                    button.textContent = 'Success!';
+                    button.classList.remove('bg-sky-600', 'hover:bg-sky-500');
+                    button.classList.add('bg-green-600');
+                    setTimeout(() => { window.location.href = '/bus'; }, 1000);
+                } else {
+                    errorMessage.textContent = 'Invalid username or password.';
+                    const modalPanel = loginModal.querySelector('.modal-panel');
+                    modalPanel.classList.add('animate-shake');
+                    setTimeout(() => { modalPanel.classList.remove('animate-shake'); }, 500);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

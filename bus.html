@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://api.backendless.com/sdk/js/latest/backendless.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent body scroll, content will scroll instead */
+            color: #e5e7eb; /* Default light text color */
+        }
+
+        /* 1. Parallax Background Image Container */
+        #background-container {
+            position: fixed;
+            top: -5%; left: -5%;
+            width: 110%; height: 110%;
+            z-index: -2;
+            background-image: url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1887&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 2. Animated Gradient Overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #334155, #0f172a);
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+            opacity: 0.85;
+            z-index: -1;
+        }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 3. "Connecting Chains" Particles Container */
+        #tsparticles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+
+        /* 4. Main Content Container for scrolling */
+        #main-content {
+            position: relative;
+            z-index: 1;
+            height: 100vh;
+            overflow-y: auto; /* Enable scrolling for the content area */
+        }
+        
+        /* Custom scrollbar for a better look */
+        #main-content::-webkit-scrollbar { width: 8px; }
+        #main-content::-webkit-scrollbar-track { background: transparent; }
+        #main-content::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 20px; border: 3px solid transparent; }
+
+
+        /* Frosted Glass Effect */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-left-color: #60a5fa; /* Light blue spinner */
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        .modal-backdrop { transition: opacity 0.3s ease; }
+        .modal-panel { transition: transform 0.3s ease; }
+    </style>
+</head>
+<body>
+
+    <div id="background-container"></div>
+
+    <div id="tsparticles"></div>
+
+    <div id="main-content">
+        <header class="glass-effect sticky top-0 z-10">
+            <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="text-2xl font-bold text-white">
+                    <a href="/bus">Admin Dashboard</a>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="/add_bus" class="text-gray-300 hover:text-white transition-colors duration-300">Add Bus</a>
+                    <a href="/bus" class="text-sky-400 font-semibold border-b-2 border-sky-400">Manage Buses</a>
+                    <a href="/" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300">Logout</a>
+                </div>
+            </nav>
+        </header>
+
+        <main class="container mx-auto px-6 py-8">
+            <h1 class="text-3xl font-bold text-white mb-6">Manage Buses</h1>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="glass-effect p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">Total Buses</h3>
+                    <p id="total-buses" class="text-4xl font-bold text-white">0</p>
+                </div>
+                <div class="glass-effect p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">Active Buses</h3>
+                    <p id="active-buses" class="text-4xl font-bold text-green-400">0</p>
+                </div>
+                <div class="glass-effect p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">Under Maintenance</h3>
+                    <p id="maintenance-buses" class="text-4xl font-bold text-yellow-400">0</p>
+                </div>
+                <div class="glass-effect p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">Inactive Buses</h3>
+                    <p id="inactive-buses" class="text-4xl font-bold text-red-400">0</p>
+                </div>
+            </div>
+
+            <div class="mt-10 glass-effect p-6 rounded-lg">
+                <h2 class="text-xl font-semibold text-white mb-4">Bus Fleet</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-white/20">
+                                <th class="p-3 bg-transparent font-semibold">Bus Number</th>
+                                <th class="p-3 bg-transparent font-semibold">Route</th>
+                                <th class="p-3 bg-transparent font-semibold">Driver</th>
+                                <th class="p-3 bg-transparent font-semibold">Status</th>
+                                <th class="p-3 bg-transparent font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bus-list-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="driver-login-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden modal-backdrop z-20">
+        <div class="glass-effect rounded-lg p-8 w-full max-w-sm modal-panel transform scale-95 text-white">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Driver Login</h2>
+                <button id="close-login-modal-button" class="text-gray-300 hover:text-white text-3xl">&times;</button>
+            </div>
+            <form id="driver-login-form">
+                <input type="hidden" id="login-object-id">
+                <div class="mb-4">
+                    <label class="block text-gray-200 text-sm font-bold mb-2">Bus Number</label>
+                    <input type="text" id="login-bus-number" class="shadow-inner appearance-none border border-white/20 bg-white/10 rounded-lg w-full py-3 px-4 text-white/70 leading-tight focus:outline-none" readonly>
+                </div>
+                <div class="mb-6">
+                    <label for="login-password" class="block text-gray-200 text-sm font-bold mb-2">Password</label>
+                    <input type="password" id="login-password" class="shadow-inner appearance-none border border-white/20 bg-white/10 rounded-lg w-full py-3 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-sky-400" required>
+                </div>
+                <p id="login-error-message" class="text-red-400 text-xs italic mb-4 h-4"></p>
+                <div class="flex items-center justify-end">
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-300">
+                        Log In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="status-change-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden modal-backdrop z-20">
+        <div class="glass-effect rounded-lg p-8 w-full max-w-sm modal-panel transform scale-95 text-white">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Change Bus Status</h2>
+                <button id="close-status-modal-button" class="text-gray-300 hover:text-white text-3xl">&times;</button>
+            </div>
+            <form id="status-change-form">
+                <input type="hidden" id="status-object-id">
+                <div class="mb-4">
+                    <label class="block text-gray-200 text-sm font-bold mb-2">Bus Number</label>
+                    <input type="text" id="status-bus-number" class="shadow-inner appearance-none border border-white/20 bg-white/10 rounded-lg w-full py-3 px-4 text-white/70 leading-tight focus:outline-none" readonly>
+                </div>
+                <div class="mb-4">
+                    <label for="status-select" class="block text-gray-200 text-sm font-bold mb-2">New Status</label>
+                    <select id="status-select" class="shadow border border-white/20 bg-slate-700 rounded-lg w-full py-3 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                        <option value="active">Active</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label for="status-password" class="block text-gray-200 text-sm font-bold mb-2">Enter Password to Confirm</label>
+                    <input type="password" id="status-password" class="shadow-inner appearance-none border border-white/20 bg-white/10 rounded-lg w-full py-3 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-yellow-400" required>
+                </div>
+                <p id="status-error-message" class="text-red-400 text-xs italic mb-4 h-4"></p>
+                <div class="flex items-center justify-end">
+                    <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-300">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+
+    <script>
+        // --- Backendless Integration ---
+        const APP_ID = '7A748A24-7BDE-48E4-B794-E1F6CF1E9CF2';
+        const API_KEY = '4F8AE28B-AB86-40D7-94FB-6F1BF8C639E6';
+        Backendless.initApp(APP_ID, API_KEY);
+
+        // --- DOM Elements ---
+        const totalBusesEl = document.getElementById('total-buses');
+        const activeBusesEl = document.getElementById('active-buses');
+        const maintenanceBusesEl = document.getElementById('maintenance-buses');
+        const inactiveBusesEl = document.getElementById('inactive-buses');
+        const busListBody = document.getElementById('bus-list-body');
+        const loginModal = document.getElementById('driver-login-modal');
+        const closeLoginModalButton = document.getElementById('close-login-modal-button');
+        const loginForm = document.getElementById('driver-login-form');
+        const statusModal = document.getElementById('status-change-modal');
+        const closeStatusModalButton = document.getElementById('close-status-modal-button');
+        const statusForm = document.getElementById('status-change-form');
+
+        // --- Functions ---
+        const createStatusBadge = (status) => {
+            let colorClasses = 'bg-red-400/30 text-red-200';
+            if (status === 'active') colorClasses = 'bg-green-400/30 text-green-200';
+            else if (status === 'maintenance') colorClasses = 'bg-yellow-400/30 text-yellow-200';
+            return `<span class="${colorClasses} py-1 px-3 rounded-full text-xs capitalize">${status || 'inactive'}</span>`;
+        };
+
+        const loadBuses = () => {
+            busListBody.innerHTML = `<tr><td colspan="5" class="text-center p-8"><div class="flex justify-center items-center"><div class="spinner"></div><p class="ml-4 text-gray-300">Loading bus data...</p></div></td></tr>`;
+            Backendless.Data.of("Buses").find()
+                .then(buses => {
+                    busListBody.innerHTML = '';
+                    if (buses.length === 0) {
+                        busListBody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-gray-400">No buses found. <a href="/add_bus" class="text-sky-400 hover:underline">Add one now!</a></td></tr>`;
+                        return;
+                    }
+                    totalBusesEl.textContent = buses.length;
+                    activeBusesEl.textContent = buses.filter(b => b.status === 'active').length;
+                    maintenanceBusesEl.textContent = buses.filter(b => b.status === 'maintenance').length;
+                    inactiveBusesEl.textContent = buses.filter(b => b.status === 'inactive' || !b.status).length;
+                    buses.forEach(bus => {
+                        const route = bus.source && bus.destination ? `${bus.source} to ${bus.destination}` : 'Not Set';
+                        const row = `
+                            <tr class="border-b border-white/10 hover:bg-white/5">
+                                <td class="p-3 font-medium text-white">${bus.busNumber}</td>
+                                <td class="p-3">${route}</td>
+                                <td class="p-3 text-gray-300">${bus.driverName || 'N/A'}</td>
+                                <td class="p-3">${createStatusBadge(bus.status)}</td>
+                                <td class="p-3">
+                                    <div class="flex items-center space-x-2">
+                                        <button class="change-status-btn bg-yellow-500 hover:bg-yellow-600 text-black text-xs font-bold py-1 px-3 rounded"
+                                            data-object-id="${bus.objectId}" data-bus-number="${bus.busNumber}" data-current-status="${bus.status || 'inactive'}">
+                                            Status
+                                        </button>
+                                        <button class="login-btn bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold py-1 px-3 rounded"
+                                            data-object-id="${bus.objectId}" data-bus-number="${bus.busNumber}">
+                                            Login
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>`;
+                        busListBody.innerHTML += row;
+                    });
+                })
+                .catch(error => {
+                    console.error("Error fetching buses:", error);
+                    busListBody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-red-400">Error loading data: ${error.message}</td></tr>`;
+                });
+        };
+
+        const showModal = (modalElement) => {
+            modalElement.classList.remove('hidden');
+            setTimeout(() => {
+                modalElement.classList.add('opacity-100');
+                modalElement.querySelector('.modal-panel').classList.remove('scale-95');
+            }, 10);
+        };
+
+        const hideModal = (modalElement) => {
+            modalElement.classList.remove('opacity-100');
+            modalElement.querySelector('.modal-panel').classList.add('scale-95');
+            setTimeout(() => modalElement.classList.add('hidden'), 300);
+        };
+        
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 3D Parallax Background Effect ---
+            const bg = document.getElementById('background-container');
+            if (bg) {
+                document.addEventListener('mousemove', (e) => {
+                    const { clientX, clientY } = e;
+                    const moveX = (clientX / window.innerWidth - 0.5) * 40;
+                    const moveY = (clientY / window.innerHeight - 0.5) * 40;
+                    bg.style.transform = `translateX(${moveX}px) translateY(${moveY}px)`;
+                });
+            }
+
+            // --- "Connecting Chains" tsParticles Config ---
+            tsParticles.load("tsparticles", { fpsLimit: 60, interactivity: { events: { onHover: { enable: true, mode: "grab" }, resize: true }, modes: { grab: { distance: 140, links: { opacity: 1 } } } }, particles: { color: { value: "#ffffff" }, links: { color: "#ffffff", distance: 150, enable: true, opacity: 0.2, width: 1 }, collisions: { enable: true }, move: { direction: "none", enable: true, outModes: { default: "bounce" }, random: false, speed: 1, straight: false }, number: { density: { enable: true, area: 800 }, value: 80 }, opacity: { value: 0.3 }, shape: { type: "circle" }, size: { value: { min: 1, max: 3 } } }, detectRetina: true });
+            
+            // --- Initial Data Load ---
+            loadBuses();
+        });
+
+        busListBody.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.classList.contains('login-btn')) {
+                document.getElementById('login-bus-number').value = target.dataset.busNumber;
+                document.getElementById('login-object-id').value = target.dataset.objectId;
+                document.getElementById('login-password').value = '';
+                document.getElementById('login-error-message').textContent = '';
+                showModal(loginModal);
+            } else if (target.classList.contains('change-status-btn')) {
+                document.getElementById('status-bus-number').value = target.dataset.busNumber;
+                document.getElementById('status-object-id').value = target.dataset.objectId;
+                document.getElementById('status-select').value = target.dataset.currentStatus;
+                document.getElementById('status-password').value = '';
+                document.getElementById('status-error-message').textContent = '';
+                showModal(statusModal);
+            }
+        });
+
+        closeLoginModalButton.addEventListener('click', () => hideModal(loginModal));
+        loginModal.addEventListener('click', (event) => { if (event.target === loginModal) hideModal(loginModal); });
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const objectId = document.getElementById('login-object-id').value;
+            const password = document.getElementById('login-password').value;
+            const errorMessageEl = document.getElementById('login-error-message');
+            Backendless.Data.of("Buses").findById(objectId)
+                .then(bus => {
+                    if (bus.password === password) {
+                        localStorage.setItem('loggedInBus', JSON.stringify(bus));
+                        window.location.href = '/driver_dashboard';
+                    } else {
+                        errorMessageEl.textContent = 'Invalid password.';
+                    }
+                })
+                .catch(error => {
+                    console.error("Login error:", error);
+                    errorMessageEl.textContent = 'An error occurred. Please try again.';
+                });
+        });
+        
+        closeStatusModalButton.addEventListener('click', () => hideModal(statusModal));
+        statusModal.addEventListener('click', (event) => { if (event.target === statusModal) hideModal(statusModal); });
+        statusForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const objectId = document.getElementById('status-object-id').value;
+            const password = document.getElementById('status-password').value;
+            const newStatus = document.getElementById('status-select').value;
+            const errorMessageEl = document.getElementById('status-error-message');
+            errorMessageEl.textContent = '';
+            Backendless.Data.of("Buses").findById(objectId)
+                .then(bus => {
+                    if (bus.password === password) {
+                        bus.status = newStatus;
+                        Backendless.Data.of("Buses").save(bus)
+                            .then(() => {
+                                hideModal(statusModal);
+                                loadBuses();
+                            })
+                            .catch(updateError => {
+                                console.error("Status update error:", updateError);
+                                errorMessageEl.textContent = 'Failed to save status.';
+                            });
+                    } else {
+                        errorMessageEl.textContent = 'Invalid password.';
+                    }
+                })
+                .catch(findError => {
+                    console.error("Bus lookup error:", findError);
+                    errorMessageEl.textContent = 'An error occurred. Please try again.';
+                });
+        });
+    </script>
+</body>
+</html>
